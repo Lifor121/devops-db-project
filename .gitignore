@@ -1,0 +1,13 @@
+# Виртуальные окружения, cекреты, локальные переменные
+venv/
+env/
+.env
+
+# Python кэш и артефакты
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Pytest
+.pytest_cache/
+.coverage
