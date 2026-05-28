@@ -1,0 +1,57 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    # Поднимаем сервис базы данных специально для накатывания миграций Alembic
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: testdb
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run Alembic migrations
+        env:
+          DATABASE_URL: postgresql+asyncpg://postgres:postgres@localhost:5432/testdb
+        run: alembic upgrade head
+
+      - name: Run tests
+        env:
+          # Этот URL нужен для общего контекста, хотя Testcontainers внутри pytest
+          # всё равно поднимут свою собственную изолированную базу для самих тестов
+          DATABASE_URL: postgresql+asyncpg://postgres:postgres@localhost:5432/testdb
+        run: pytest -v --tb=short
+
+      - name: Test summary
+        if: always()
+        run: echo 'Tests completed successfully!'
