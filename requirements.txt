@@ -7,3 +7,5 @@ pydantic==2.7.1
 testcontainers==4.4.0
 pytest==8.2.0
 pytest-asyncio==0.23.6
+sqladmin==0.16.1
+itsdangerous==2.2.0
