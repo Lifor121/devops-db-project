@@ -1,8 +1,13 @@
 from fastapi import FastAPI
+from sqladmin import Admin
 
 from app.database import Base, engine
+from app.admin import UserAdmin
 
 app = FastAPI(title="User Service", version="1.0.0")
+
+admin = Admin(app, engine)
+admin.add_view(UserAdmin)
 
 
 @app.on_event("startup")
