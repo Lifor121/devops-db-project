@@ -2,11 +2,11 @@ from fastapi import FastAPI
 from sqladmin import Admin
 
 from app.database import Base, engine
-from app.admin import UserAdmin
+from app.admin import UserAdmin, authentication_backend
 
 app = FastAPI(title="User Service", version="1.0.0")
 
-admin = Admin(app, engine)
+admin = Admin(app, engine, authentication_backend=authentication_backend)
 admin.add_view(UserAdmin)
 
 
