@@ -6,23 +6,17 @@
 
 ## Стек технологий
 
-* 
-**Backend:** Python 3.12, FastAPI, SQLAlchemy 2.0 
+* **Backend:** Python 3.12, FastAPI, SQLAlchemy 2.0 
 
-* 
-**База данных:** PostgreSQL 16, Alembic (управление миграциями) 
+* **База данных:** PostgreSQL 16, Alembic (управление миграциями) 
 
-* 
-**Тестирование:** Pytest, Testcontainers 
+* **Тестирование:** Pytest, Testcontainers 
 
-* 
-**Инфраструктура:** Docker, Docker Compose 
+* **Инфраструктура:** Docker, Docker Compose 
 
-* 
-**CI/CD:** GitHub Actions 
+* **CI/CD:** GitHub Actions 
 
-* 
-**Мониторинг:** Prometheus, Grafana, `postgres_exporter` 
+* **Мониторинг:** Prometheus, Grafana, `postgres_exporter` 
 
 
 ## Быстрый старт
@@ -55,8 +49,7 @@ docker compose up --build -d
 
 Проект использует декларативный подход к моделям и автогенерацию миграций.
 
-* 
-**Генерация новой миграции** (после изменения моделей в `models.py`):
+* **Генерация новой миграции** (после изменения моделей в `models.py`):
 
 
 ```bash
@@ -64,15 +57,13 @@ alembic revision --autogenerate -m "описание_изменений"
 
 ```
 
-* 
-**Применение миграций к БД**:
+* **Применение миграций к БД**:
 
 ```bash
 alembic upgrade head
 ```
 
-* 
-**Откат последней миграции**:
+* **Откат последней миграции**:
 
 ```bash
 alembic downgrade -1
