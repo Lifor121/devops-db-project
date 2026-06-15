@@ -55,3 +55,23 @@ jobs:
       - name: Test summary
         if: always()
         run: echo 'Tests completed successfully!'
+
+  deploy:
+    needs: test # Запускаем только после успешных тестов
+    if: github.ref == 'refs/heads/master' # Деплоим только из ветки master
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to Home Server via VPS
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.HOME_SERVER_IP }}
+          username: ${{ secrets.HOME_SERVER_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          proxy_host: ${{ secrets.VPS_HOST }}
+          proxy_username: ${{ secrets.VPS_USER }}
+          proxy_key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            cd ~/devops-db-project
+            git pull origin master
+            docker compose up --build -d
+            docker image prune -f
