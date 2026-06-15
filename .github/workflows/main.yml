@@ -70,6 +70,7 @@ jobs:
           proxy_host: ${{ secrets.VPS_HOST }}
           proxy_username: ${{ secrets.VPS_USER }}
           proxy_key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script_stop: true
           script: |
             cd ~/devops-db-project
             git pull origin master
