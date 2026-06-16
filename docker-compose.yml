@@ -48,7 +48,13 @@ services:
     ports:
       - "3000:3000"
     environment:
-      GF_SECURITY_ADMIN_PASSWORD: admin
+      - GF_SMTP_ENABLED=true
+      - GF_SMTP_HOST=smtp.yandex.ru:465
+      - GF_SMTP_USER=${EMAIL}
+      - GF_SMTP_PASSWORD=${GRAFANA_SMTP_PASSWORD}
+      - GF_SMTP_FROM_ADDRESS=${EMAIL}
+      - GF_SMTP_FROM_NAME=Grafana Alerts
+      - GF_SECURITY_ADMIN_PASSWORD=admin
     volumes:
       - grafana_data:/var/lib/grafana
 
