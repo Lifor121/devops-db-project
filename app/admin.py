@@ -1,7 +1,9 @@
 from sqladmin import ModelView
 from sqladmin.authentication import AuthenticationBackend
 from starlette.requests import Request
+
 from app.models import User
+
 
 class AdminAuth(AuthenticationBackend):
     async def login(self, request: Request) -> bool:
@@ -28,7 +30,9 @@ class AdminAuth(AuthenticationBackend):
             return False
         return True
 
+
 authentication_backend = AdminAuth(secret_key="super_secret_key_for_session")
+
 
 class UserAdmin(ModelView, model=User):
     # Колонки, которые отображаются в таблице
@@ -38,11 +42,18 @@ class UserAdmin(ModelView, model=User):
         User.email,
         User.full_name,
         User.age,
-        User.created_at
+        User.created_at,
     ]
 
     column_searchable_list = [User.username, User.email]
-    column_sortable_list = [User.id, User.created_at]
+    column_sortable_list = [
+        User.id,
+        User.username,
+        User.email,
+        User.full_name,
+        User.age,
+        User.created_at,
+    ]
 
     # Настройки отображения в меню
     name = "User"
