@@ -1,12 +1,17 @@
 import io
+import json
+import os
+from datetime import datetime
 
 import pandas as pd
 from fastapi import UploadFile
 from sqladmin import BaseView, ModelView, expose
 from sqladmin.authentication import AuthenticationBackend
+from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
 from starlette.requests import Request
 
+from app.backup import create_backup
 from app.database import AsyncSessionLocal
 from app.models import User
 
@@ -123,4 +128,118 @@ class ImportView(BaseView):
 
         return await self.templates.TemplateResponse(
             request, "import.html", context={"message": message}
+        )
+
+
+class RestoreView(BaseView):
+    name = "System Restore"
+    icon = "fa-solid fa-truck-medical"
+
+    @expose("/restore", methods=["GET", "POST"])
+    async def restore_data(self, request):
+        message = ""
+        backup_path = "backups/users_backup.json"
+
+        # Обработка нажатий кнопок в интерфейсе
+        if request.method == "POST":
+            form = await request.form()
+            action = form.get("action")
+
+            if action == "create_backup":
+                success = await create_backup()
+                if success:
+                    message = "Резервная копия успешно создана/обновлена."
+                else:
+                    message = "Отмена: невозможно создать бэкап, так как таблица пользователей пуста."
+            elif action == "restore_backup":
+                if not os.path.exists(backup_path):
+                    message = "Ошибка: Файл бэкапа не найден!"
+                else:
+                    try:
+                        with open(backup_path, "r", encoding="utf-8") as f:
+                            data = json.load(f)
+
+                        async with AsyncSessionLocal() as session:
+                            # Получаем все существующие username и email из БД
+                            existing = await session.execute(
+                                select(User.username, User.email)
+                            )
+                            existing_rows = existing.all()
+
+                            # Превращаем их в множества
+                            existing_usernames = {row.username for row in existing_rows}
+                            existing_emails = {row.email for row in existing_rows}
+
+                            added_count = 0
+                            skipped_count = 0
+
+                            # Перебираем бэкап и добавляем только недостающие записи
+                            for item in data:
+                                # Если такой пользователь уже есть - пропускаем
+                                if (
+                                    item["username"] in existing_usernames
+                                    or item["email"] in existing_emails
+                                ):
+                                    skipped_count += 1
+                                    continue
+
+                                user = User(
+                                    username=item["username"],
+                                    email=item["email"],
+                                    full_name=item.get("full_name"),
+                                    age=item.get("age"),
+                                )
+                                if item.get("created_at"):
+                                    user.created_at = datetime.fromisoformat(
+                                        item["created_at"]
+                                    )
+
+                                session.add(user)
+                                added_count += 1
+
+                            # 3. Сохраняем только новых пользователей
+                            await session.commit()
+
+                        message = f"Успех! Слияние завершено. Восстановлено записей: {added_count}. Пропущено дубликатов: {skipped_count}."
+                    except Exception as e:
+                        message = f"Произошла ошибка при чтении бэкапа: {str(e)}"
+
+        # Проверка доступности файла
+        backup_exists = os.path.exists(backup_path)
+        backup_time = None
+        backup_records_count = 0
+        backup_valid = False
+
+        if backup_exists:
+            try:
+                mtime = os.path.getmtime(backup_path)
+                backup_time = datetime.fromtimestamp(mtime).strftime(
+                    "%Y-%m-%d %H:%M:%S"
+                )
+                # Читаем файл, чтобы проверить целостность
+                with open(backup_path, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+                    backup_records_count = len(data)
+                    backup_valid = True
+            except Exception:
+                # Если JSON сломан, помечаем бэкап как невалидный
+                backup_valid = False
+
+        # Проверяем состояние БД
+        async with AsyncSessionLocal() as session:
+            result = await session.execute(select(func.count(User.id)))
+            count = result.scalar()
+            db_empty = count == 0
+
+        context = {
+            "request": request,
+            "message": message,
+            "db_empty": db_empty,
+            "backup_exists": backup_exists,
+            "backup_valid": backup_valid,
+            "backup_time": backup_time,
+            "backup_records_count": backup_records_count,
+        }
+        return await self.templates.TemplateResponse(
+            request, "restore.html", context=context
         )

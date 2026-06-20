@@ -21,7 +21,7 @@ async def create_backup():
 
         # Если база пуста, не перезаписываем бэкап пустотой
         if not users:
-            return
+            return False
 
         # Сериализуем данные
         data = []
@@ -45,3 +45,4 @@ async def create_backup():
         print(
             f"[{datetime.now()}] Успешный бэкап {len(data)} пользователей в {filepath}"
         )
+        return True
