@@ -86,7 +86,7 @@ class ImportView(BaseView):
             if file and file.filename:
                 contents = await file.read()
                 try:
-                    # Читаем файл в зависимости от расширения
+                    # Читаем файл
                     if file.filename.endswith(".csv"):
                         df = pd.read_csv(io.BytesIO(contents))
                     elif file.filename.endswith(".xlsx"):
@@ -96,38 +96,53 @@ class ImportView(BaseView):
                         return await self.templates.TemplateResponse(
                             request,
                             "import.html",
-                            context={"message": message},
+                            context={"request": request, "message": message},
                         )
 
-                    # Открываем сессию базы данных и построчно сохраняем записи
+                    df = df.where(pd.notnull(df), None)
+
                     async with AsyncSessionLocal() as session:
                         added_count = 0
-                        for _, row in df.iterrows():
-                            # Извлекаем данные (учитываем, что возраст может быть пустым — NaN)
-                            user = User(
-                                username=str(row["username"]),
-                                email=str(row["email"]),
-                                full_name=str(row["full_name"])
-                                if "full_name" in row and pd.notna(row["full_name"])
-                                else None,
-                                age=int(row["age"])
-                                if "age" in row and pd.notna(row["age"])
-                                else None,
-                            )
-                            session.add(user)
+                        error_log = []
+
+                        for i, (_, row) in enumerate(df.iterrows()):
                             try:
+                                # Безопасно достаем значения
+                                fname_val = row.get("full_name")
+                                age_val = row.get("age")
+
+                                user = User(
+                                    username=str(row["username"]),
+                                    email=str(row["email"]),
+                                    full_name=str(fname_val)
+                                    if fname_val is not None
+                                    else None,
+                                    age=int(age_val) if age_val is not None else None,
+                                )
+                                session.add(user)
                                 await session.commit()
                                 added_count += 1
+
+                            except ValueError as ve:
+                                await session.rollback()
+                                error_log.append(
+                                    f"Строка {i + 2} ({row.get('username')}): {str(ve)}"
+                                )
+
                             except IntegrityError:
-                                # Если пользователь с таким username или email уже есть — пропускаем
                                 await session.rollback()
 
-                        message = f"Обработка завершена. Успешно добавлено новых пользователей: {added_count}."
+                        message = (
+                            f"Обработка завершена. Успешно добавлено: {added_count}."
+                        )
+                        if error_log:
+                            message += " Ошибки: " + " | ".join(error_log)
+
                 except Exception as e:
                     message = f"Произошла ошибка при обработке файла: {str(e)}"
 
         return await self.templates.TemplateResponse(
-            request, "import.html", context={"message": message}
+            request, "import.html", context={"request": request, "message": message}
         )
 
 
