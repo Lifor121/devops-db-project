@@ -2,7 +2,13 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from fastapi import FastAPI
 from sqladmin import Admin
 
-from app.admin import ImportView, RestoreView, UserAdmin, authentication_backend
+from app.admin import (
+    DeletionRequestAdmin,
+    ImportView,
+    RestoreView,
+    UserAdmin,
+    authentication_backend,
+)
 from app.backup import create_backup
 from app.database import Base, engine
 
@@ -17,6 +23,7 @@ admin = Admin(
 admin.add_view(UserAdmin)
 admin.add_view(ImportView)
 admin.add_view(RestoreView)
+admin.add_view(DeletionRequestAdmin)
 
 
 @app.on_event("startup")

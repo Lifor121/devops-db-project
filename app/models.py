@@ -1,7 +1,7 @@
 import re
 from datetime import datetime
 
-from sqlalchemy import DateTime, Integer, String
+from sqlalchemy import Column, DateTime, ForeignKey, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column, validates
 from sqlalchemy.sql import func
 
@@ -56,3 +56,16 @@ class User(Base):
             if not re.match(r"^[A-Za-zА-Яа-яЁё\s\-]+$", name):
                 raise ValueError(f"Имя должно содержать только буквы: {name}")
         return name
+
+
+class DeletionRequest(Base):
+    __tablename__ = "deletion_requests"
+
+    id = Column(Integer, primary_key=True, index=True)
+    # ondelete="CASCADE" означает, что если удалить юзера, все его заявки тоже удалятся
+    user_id = Column(
+        Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False
+    )
+    requested_by = Column(String, nullable=False)
+    status = Column(String, default="pending")  # Статусы: pending, approved, rejected
+    created_at = Column(DateTime, default=datetime.utcnow)
