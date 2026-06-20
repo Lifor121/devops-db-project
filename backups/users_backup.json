@@ -1,0 +1,16 @@
+[
+    {
+        "username": "Ivan",
+        "email": "ivanov@mail.ru",
+        "full_name": "Ivan Ivanov Ivanovich",
+        "age": 67,
+        "created_at": "2026-06-07T12:00:00"
+    },
+    {
+        "username": "a",
+        "email": "a",
+        "full_name": null,
+        "age": null,
+        "created_at": "2026-06-20T18:44:28.970901"
+    }
+]
