@@ -18,17 +18,27 @@ class User(Base):
     age: Mapped[int | None] = mapped_column(Integer, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
 
+    @validates("username")
+    def validate_username(self, key, username):
+        if username:
+            return str(username).strip()
+        return username
+
     @validates("email")
     def validate_email(self, key, address):
-        # Проверяем наличие @ и точки, и отсутствие пробелов
-        if not re.match(r"^[\w\.-]+@[\w\.-]+\.\w+$", address):
-            raise ValueError(f"Некорректный формат email адреса: {address}")
-        return address.lower()  # Заодно приводим к нижнему регистру
+        if address:
+            # Убираем пробелы до и после
+            address = str(address).strip()
+            if not re.match(r"^[\w\.-]+@[\w\.-]+\.\w+$", address):
+                raise ValueError(f"Некорректный формат email адреса: {address}")
+            # Возвращаем очищенный и переведенный в нижний регистр email
+            return address.lower()
+        return address
 
     @validates("age")
     def validate_age(self, key, age):
         if age is not None:
-            age = int(age)  # Пытаемся привести к числу
+            age = int(age)
             if age < 0 or age > 120:
                 raise ValueError(
                     f"Возраст должен быть от 0 до 120 лет, передано: {age}"
@@ -38,10 +48,11 @@ class User(Base):
     @validates("full_name")
     def validate_full_name(self, key, name):
         if name:
-            name = str(name).strip()
+            # Убираем пробелы по краям и делаем Каждое Слово С Большой Буквы
+            name = str(name).strip().title()
+
             if len(name) < 2:
                 raise ValueError("Имя слишком короткое (минимум 2 символа)")
-            # Разрешаем только буквы, пробелы и дефисы (без цифр и спецсимволов)
             if not re.match(r"^[A-Za-zА-Яа-яЁё\s\-]+$", name):
                 raise ValueError(f"Имя должно содержать только буквы: {name}")
         return name
