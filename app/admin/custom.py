@@ -12,7 +12,7 @@ from starlette.requests import Request
 
 from app.backup import create_backup
 from app.database import AsyncSessionLocal
-from app.models import User
+from app.models import AuditLog, User
 
 
 class ImportView(BaseView):
@@ -74,6 +74,17 @@ class ImportView(BaseView):
 
                             except IntegrityError:
                                 await session.rollback()
+
+                        # Импорт файла
+                        if added_count > 0:
+                            log = AuditLog(
+                                actor_role=request.session.get("role", "admin"),
+                                action_type="IMPORT",
+                                entity_name="File",
+                                details=f"Успешно импортировано {added_count} записей из файла {file.filename}",
+                            )
+                            session.add(log)
+                            await session.commit()
 
                         message = (
                             f"Обработка завершена. Успешно добавлено: {added_count}."

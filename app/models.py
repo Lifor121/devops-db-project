@@ -77,3 +77,18 @@ class DeletionRequest(Base):
     status = Column(String, default="pending")  # Статусы: pending, approved, rejected
     created_at = Column(DateTime, default=datetime.utcnow)
     user = relationship("User", back_populates="deletion_requests")
+
+
+class AuditLog(Base):
+    __tablename__ = "audit_logs"
+
+    id = Column(Integer, primary_key=True, index=True)
+    actor_role = Column(String, nullable=False)  # Кто: admin или manager
+    action_type = Column(
+        String, nullable=False
+    )  # Тип: IMPORT, DELETE, REQUEST_DELETE, APPROVE, REJECT
+    entity_name = Column(
+        String, nullable=False
+    )  # Что затронуто: User, File, DeletionRequest
+    details = Column(String, nullable=False)  # Детали: "Иван (ivan@mail.ru)"
+    timestamp = Column(DateTime, default=datetime.utcnow)

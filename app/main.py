@@ -5,7 +5,7 @@ from sqladmin import Admin
 from app.admin.auth import authentication_backend
 from app.admin.context import current_request
 from app.admin.custom import ImportView, RestoreView
-from app.admin.views import DeletionRequestAdmin, UserAdmin
+from app.admin.views import AuditLogAdmin, DeletionRequestAdmin, UserAdmin
 from app.backup import create_backup
 from app.database import Base, engine
 
@@ -31,6 +31,7 @@ admin.add_view(UserAdmin)
 admin.add_view(ImportView)
 admin.add_view(RestoreView)
 admin.add_view(DeletionRequestAdmin)
+admin.add_view(AuditLogAdmin)
 
 
 @app.on_event("startup")
