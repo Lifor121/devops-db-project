@@ -1,15 +1,57 @@
 from typing import Any
 
+from fastapi import HTTPException
 from fastapi.responses import RedirectResponse
+from markupsafe import Markup
 from sqladmin import ModelView, action
 from sqlalchemy import select
 from starlette.requests import Request
 
+from app.admin.context import current_request
 from app.database import AsyncSessionLocal
 from app.models import DeletionRequest, User
 
 
+def role_ui_formatter(model, attribute):
+    req = current_request.get()
+    role = req.session.get("role") if req else "unknown"
+
+    val = (
+        getattr(model, attribute.name)
+        if hasattr(attribute, "name")
+        else getattr(model, str(attribute), "")
+    )
+
+    if role == "manager":
+        # Скрываем корзины
+        style = """<style>
+            a[href*='/delete'],
+            button[data-bs-target*='delete'],
+            form[action*='/delete'],
+            a:has(i.fa-trash) {
+                display: none !important;
+            }
+        </style>"""
+        return Markup(f"{val} {style}")
+
+    elif role == "admin":
+        # Скрываем кастомное действие для админа
+        style = """<style>
+            a[href*='request_deletion'] {
+                display: none !important;
+            }
+        </style>"""
+        return Markup(f"{val} {style}")
+
+    return val
+
+
 class UserAdmin(ModelView, model=User):
+    identity = "user"
+    name = "Пользователи"
+    name_plural = "Пользователи"
+    icon = "fa-solid fa-users"
+
     column_list = [
         User.id,
         User.username,
@@ -28,7 +70,21 @@ class UserAdmin(ModelView, model=User):
         User.created_at,
     ]
 
-    can_delete = False
+    # Подключаем инъекцию стилей к колонке ID
+    column_formatters = {User.id: role_ui_formatter}
+
+    can_delete = True
+
+    def is_accessible(self, request: Request) -> bool:
+        return request.session.get("role") in ["admin", "manager"]
+
+    # Бэкенд-защита
+    async def on_model_delete(self, model: Any, request: Request) -> None:
+        if request.session.get("role") != "admin":
+            raise HTTPException(
+                status_code=403,
+                detail="Только администратор может удалять записи напрямую.",
+            )
 
     @action(
         name="request_deletion",
@@ -59,11 +115,6 @@ class UserAdmin(ModelView, model=User):
         url = request.url_for("admin:list", identity=self.identity)
         return RedirectResponse(url)
 
-    # Настройки отображения в меню
-    name = "User"
-    name_plural = "Users"
-    icon = "fa-solid fa-user"
-
 
 class DeletionRequestAdmin(ModelView, model=DeletionRequest):
     name = "Запросы на удаление"
@@ -72,7 +123,7 @@ class DeletionRequestAdmin(ModelView, model=DeletionRequest):
 
     column_list = [
         DeletionRequest.id,
-        DeletionRequest.user_id,
+        DeletionRequest.user,
         DeletionRequest.requested_by,
         DeletionRequest.status,
         DeletionRequest.created_at,

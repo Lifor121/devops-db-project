@@ -1,14 +1,25 @@
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from sqladmin import Admin
 
 from app.admin.auth import authentication_backend
+from app.admin.context import current_request
 from app.admin.custom import ImportView, RestoreView
 from app.admin.views import DeletionRequestAdmin, UserAdmin
 from app.backup import create_backup
 from app.database import Base, engine
 
 app = FastAPI(title="User Service", version="1.0.0")
+
+
+@app.middleware("http")
+async def capture_request_middleware(request: Request, call_next):
+    token = current_request.set(request)
+    try:
+        return await call_next(request)
+    finally:
+        current_request.reset(token)
+
 
 admin = Admin(
     app,

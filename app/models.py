@@ -2,7 +2,7 @@ import re
 from datetime import datetime
 
 from sqlalchemy import Column, DateTime, ForeignKey, Integer, String
-from sqlalchemy.orm import Mapped, mapped_column, validates
+from sqlalchemy.orm import Mapped, mapped_column, relationship, validates
 from sqlalchemy.sql import func
 
 from app.database import Base
@@ -57,6 +57,13 @@ class User(Base):
                 raise ValueError(f"Имя должно содержать только буквы: {name}")
         return name
 
+    deletion_requests = relationship(
+        "DeletionRequest", back_populates="user", cascade="all, delete-orphan"
+    )
+
+    def __str__(self):
+        return f"{self.username} ({self.email})"
+
 
 class DeletionRequest(Base):
     __tablename__ = "deletion_requests"
@@ -69,3 +76,4 @@ class DeletionRequest(Base):
     requested_by = Column(String, nullable=False)
     status = Column(String, default="pending")  # Статусы: pending, approved, rejected
     created_at = Column(DateTime, default=datetime.utcnow)
+    user = relationship("User", back_populates="deletion_requests")
