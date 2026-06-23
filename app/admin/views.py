@@ -23,26 +23,24 @@ def role_ui_formatter(model, attribute):
     )
 
     if role == "manager":
-        # Скрываем корзины
+        # Скрытие всех элементов удаления (индивидуальных и массовых)
         style = """<style>
-            a[href*='/delete'],
-            button[data-bs-target*='delete'],
-            form[action*='/delete'],
-            a:has(i.fa-trash) {
+            /* Скрываем индивидуальные ссылки-корзины */
+            a[href*='/delete'], a:has(i.fa-trash),
+            /* Скрываем пункт "Delete selected items" в выпадающем меню Actions */
+            a[data-bs-target*='delete'], a[data-name='delete'],
+            /* Скрываем подтверждающие кнопки в модальных окнах (на случай пробития) */
+            button[data-bs-target*='delete'] {
                 display: none !important;
             }
         </style>"""
         return Markup(f"{val} {style}")
-
     elif role == "admin":
-        # Скрываем кастомное действие для админа
+        # Админу отрезаем кастомную кнопку запроса
         style = """<style>
-            a[href*='request_deletion'] {
-                display: none !important;
-            }
+            a[href*='/action/request_deletion'] { display: none !important; }
         </style>"""
         return Markup(f"{val} {style}")
-
     return val
 
 
