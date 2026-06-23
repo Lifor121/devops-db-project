@@ -57,9 +57,11 @@ class ImportView(BaseView):
                                 user = User(
                                     username=str(row["username"]),
                                     email=str(row["email"]),
-                                    full_name=str(fname_val)
-                                    if fname_val is not None
-                                    else None,
+                                    full_name=(
+                                        str(fname_val)
+                                        if fname_val is not None
+                                        else None
+                                    ),
                                     age=int(age_val) if age_val is not None else None,
                                 )
                                 session.add(user)

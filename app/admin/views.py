@@ -24,6 +24,7 @@ class UserAdmin(ModelView, model=User):
         User.full_name,
         User.age,
         User.created_at,
+        User.consent_personal_data,
     ]
     column_searchable_list = [User.username, User.email]
     column_sortable_list = [
@@ -42,6 +43,7 @@ class UserAdmin(ModelView, model=User):
         User.full_name: "ФИО",
         User.age: "Возраст",
         User.created_at: "Дата регистрации",
+        User.consent_personal_data: "Согласие на обработку ПД",
     }
 
     form_excluded_columns = [User.deletion_requests, User.created_at]

@@ -80,14 +80,10 @@ admin.add_view(AuditLogAdmin)
 
 @app.on_event("startup")
 async def startup():
-    # Создаем таблицы
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
-
-    # Делаем немедленный бэкап при старте сервера
+    # Делаем бэкап при старте
     await create_backup()
 
-    # Запускаем планировщик, который будет делать бэкап каждые 12 часов
+    # Запускаем планировщик
     scheduler = AsyncIOScheduler()
     scheduler.add_job(create_backup, "interval", hours=12)
     scheduler.start()
