@@ -1,0 +1,7 @@
+/* Скрываем кнопку создания заявки на удаление для роли Admin */
+a[href*="request_deletion"],
+a[data-name="request_deletion"],
+button[data-bs-target*="request_deletion"],
+a[id*="request-deletion"] {
+    display: none !important;
+}

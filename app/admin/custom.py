@@ -16,7 +16,7 @@ from app.models import AuditLog, User
 
 
 class ImportView(BaseView):
-    name = "Import Data"
+    name = "Импорт данных"
     icon = "fa-solid fa-file-import"
 
     @expose("/import", methods=["GET", "POST"])
@@ -101,7 +101,7 @@ class ImportView(BaseView):
 
 
 class RestoreView(BaseView):
-    name = "System Restore"
+    name = "Восстановление"
     icon = "fa-solid fa-truck-medical"
 
     # Скрываем от менеджера

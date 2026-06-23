@@ -1,52 +1,19 @@
+from pathlib import Path
 from typing import Any
 
 from fastapi import HTTPException
 from fastapi.responses import RedirectResponse
-from markupsafe import Markup
 from sqladmin import ModelView, action
 from sqlalchemy import select
 from starlette.requests import Request
 
-from app.admin.context import current_request
 from app.database import AsyncSessionLocal
 from app.models import AuditLog, DeletionRequest, User
 
 
-def role_ui_formatter(model, attribute):
-    req = current_request.get()
-    role = req.session.get("role") if req else "unknown"
-
-    val = (
-        getattr(model, attribute.name)
-        if hasattr(attribute, "name")
-        else getattr(model, str(attribute), "")
-    )
-
-    if role == "manager":
-        # Скрытие всех элементов удаления (индивидуальных и массовых)
-        style = """<style>
-            /* Скрываем индивидуальные ссылки-корзины */
-            a[href*='/delete'], a:has(i.fa-trash),
-            /* Скрываем пункт "Delete selected items" в выпадающем меню Actions */
-            a[data-bs-target*='delete'], a[data-name='delete'],
-            /* Скрываем подтверждающие кнопки в модальных окнах (на случай пробития) */
-            button[data-bs-target*='delete'] {
-                display: none !important;
-            }
-        </style>"""
-        return Markup(f"{val} {style}")
-    elif role == "admin":
-        # Админу отрезаем кастомную кнопку запроса
-        style = """<style>
-            a[href*='/action/request_deletion'] { display: none !important; }
-        </style>"""
-        return Markup(f"{val} {style}")
-    return val
-
-
 class UserAdmin(ModelView, model=User):
     identity = "user"
-    name = "Пользователи"
+    name = "Пользователь"
     name_plural = "Пользователи"
     icon = "fa-solid fa-users"
 
@@ -68,8 +35,16 @@ class UserAdmin(ModelView, model=User):
         User.created_at,
     ]
 
-    # Подключаем инъекцию стилей к колонке ID
-    column_formatters = {User.id: role_ui_formatter}
+    column_labels = {
+        User.id: "ID",
+        User.username: "Логин",
+        User.email: "Эл. почта",
+        User.full_name: "ФИО",
+        User.age: "Возраст",
+        User.created_at: "Дата регистрации",
+    }
+
+    form_excluded_columns = [User.deletion_requests, User.created_at]
 
     can_delete = True
 
@@ -84,7 +59,6 @@ class UserAdmin(ModelView, model=User):
                 detail="Только администратор может удалять записи напрямую.",
             )
 
-        # Прямое удаление админом (перехватываем перед удалением)
         async with AsyncSessionLocal() as session:
             log = AuditLog(
                 actor_role=role,
@@ -151,6 +125,14 @@ class DeletionRequestAdmin(ModelView, model=DeletionRequest):
         DeletionRequest.status,
         DeletionRequest.created_at,
     ]
+
+    column_labels = {
+        DeletionRequest.id: "ID",
+        DeletionRequest.user: "Пользователь",
+        DeletionRequest.requested_by: "Кто запросил",
+        DeletionRequest.status: "Статус",
+        DeletionRequest.created_at: "Дата создания",
+    }
 
     can_create = False
     can_edit = False
@@ -244,6 +226,15 @@ class AuditLogAdmin(ModelView, model=AuditLog):
         AuditLog.action_type,
     ]
     column_default_sort = ("timestamp", True)
+
+    column_labels = {
+        AuditLog.id: "ID",
+        AuditLog.timestamp: "Время",
+        AuditLog.actor_role: "Инициатор",
+        AuditLog.action_type: "Действие",
+        AuditLog.entity_name: "Сущность",
+        AuditLog.details: "Подробности",
+    }
 
     can_create = False
     can_edit = False
