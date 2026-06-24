@@ -41,3 +41,15 @@ async def test_get_user(db_session):
     found = result.scalar_one()
 
     assert found.email == "find@test.com"
+
+
+@pytest.mark.asyncio
+async def test_user_consent_default(db_session):
+    # Создаем пользователя, не передавая поле consent_personal_data
+    user = User(username="consent_test", email="consent@test.com")
+    db_session.add(user)
+    await db_session.commit()
+    await db_session.refresh(user)
+
+    # Убеждаемся, что база данных сама проставила True
+    assert user.consent_personal_data is True
