@@ -32,6 +32,7 @@ async def create_backup():
                     "email": u.email,
                     "full_name": u.full_name,
                     "age": u.age,
+                    "consent_personal_data": u.consent_personal_data,
                     "created_at": u.created_at.isoformat() if u.created_at else None,
                 }
             )

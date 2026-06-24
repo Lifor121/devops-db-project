@@ -163,6 +163,9 @@ class RestoreView(BaseView):
                                     email=item["email"],
                                     full_name=item.get("full_name"),
                                     age=item.get("age"),
+                                    consent_personal_data=item.get(
+                                        "consent_personal_data", True
+                                    ),
                                 )
                                 if item.get("created_at"):
                                     user.created_at = datetime.fromisoformat(
