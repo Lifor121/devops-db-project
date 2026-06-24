@@ -31,7 +31,6 @@ class UserAdmin(ModelView, model=User):
         User.id,
         User.username,
         User.email,
-        User.full_name,
         User.age,
         User.created_at,
     ]

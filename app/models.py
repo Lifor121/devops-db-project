@@ -1,11 +1,45 @@
+import os
 import re
 from datetime import datetime
 
+from cryptography.fernet import Fernet, InvalidToken
+from dotenv import load_dotenv
 from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship, validates
 from sqlalchemy.sql import func
+from sqlalchemy.types import TypeDecorator
 
 from app.database import Base
+
+load_dotenv()
+RAW_KEY = os.getenv("ENCRYPTION_KEY")
+
+if not RAW_KEY:
+    raise ValueError("Критическая ошибка: ENCRYPTION_KEY не найден в файле .env!")
+
+cipher = Fernet(RAW_KEY.encode("utf-8"))
+
+
+class EncryptedString(TypeDecorator):
+    impl = String
+    cache_ok = True
+
+    def process_bind_param(self, value, dialect):
+        if value is not None:
+            # Превращаем строку в байты, шифруем, и возвращаем как строку для БД
+            return cipher.encrypt(value.encode("utf-8")).decode("utf-8")
+        return value
+
+    def process_result_value(self, value, dialect):
+        if value is not None:
+            try:
+                # Берем шифр из БД, расшифровываем и отдаем чистый текст в Python
+                return cipher.decrypt(value.encode("utf-8")).decode("utf-8")
+            except InvalidToken:
+                # Если падает ошибка, значит это старые данные, сохраненные до внедрения шифрования
+                # Просто возвращаем их как есть
+                return value
+        return value
 
 
 class User(Base):
@@ -14,7 +48,7 @@ class User(Base):
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
     username: Mapped[str] = mapped_column(String(50), unique=True)
     email: Mapped[str] = mapped_column(String(100), unique=True)
-    full_name: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    full_name: Mapped[str | None] = mapped_column(EncryptedString(255), nullable=True)
     age: Mapped[int | None] = mapped_column(Integer, nullable=True)
     consent_personal_data: Mapped[bool] = mapped_column(
         Boolean, nullable=False, server_default="true"
