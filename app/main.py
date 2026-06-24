@@ -2,7 +2,7 @@ from pathlib import Path
 
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from fastapi import FastAPI, Request
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from sqladmin import Admin
 
@@ -24,14 +24,21 @@ async def global_ui_injector_middleware(request: Request, call_next):
     try:
         response = await call_next(request)
     except Exception:
-        # Если вдруг база упала так сильно, что ошибка пробила все слои фреймворка
         return HTMLResponse(content=DB_OFFLINE_HTML, status_code=503)
+
+    # Перехватываем GET-запрос к корню админки
+    if request.url.path == "/admin/" and request.method == "GET":
+        # Если sqladmin пытается отрендерить дашборд (200) или падает (500)
+        # Это значит, что пользователь АВТОРИЗОВАН (иначе был бы 302 на логин)
+        if response.status_code in [200, 500]:
+            # Моментально перекидываем в список пользователей
+            return RedirectResponse(url="/admin/user/list", status_code=303)
 
     # Ловим стандартную 500-ю ошибку админки и подменяем на нашу
     if response.status_code >= 500:
         return HTMLResponse(content=DB_OFFLINE_HTML, status_code=503)
 
-    # Если всё хорошо — впрыскиваем переводы и стили
+    # Если всё хорошо (200 OK) — впрыскиваем переводы и стили
     if response.status_code == 200 and "text/html" in response.headers.get(
         "content-type", ""
     ):
@@ -40,7 +47,6 @@ async def global_ui_injector_middleware(request: Request, call_next):
             body += chunk
         html = body.decode("utf-8")
 
-        # Безопасное чтение сессии
         try:
             role = request.session.get("role", "unknown")
         except Exception:
@@ -87,6 +93,11 @@ async def startup():
     scheduler = AsyncIOScheduler()
     scheduler.add_job(create_backup, "interval", hours=12)
     scheduler.start()
+
+
+@app.get("/")
+async def root_redirect():
+    return RedirectResponse(url="/admin")
 
 
 @app.get("/health")
