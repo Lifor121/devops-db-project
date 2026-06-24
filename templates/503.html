@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="ru">
+    <head>
+        <meta charset="UTF-8" />
+        <meta
+            name="viewport"
+            content="width=device-width, initial-scale=1, viewport-fit=cover"
+        />
+        <link rel="stylesheet" href="/admin/statics/css/tabler.min.css" />
+        <link rel="stylesheet" href="/admin/statics/css/fontawesome.min.css" />
+        <link rel="stylesheet" href="/admin/statics/css/main.css" />
+        <title>503 - База данных недоступна</title>
+    </head>
+    <body class="border-top-wide border-primary d-flex flex-column">
+        <div class="page page-center">
+            <div class="container-tight py-4">
+                <div class="empty">
+                    <div class="empty-header">503</div>
+                    <p class="empty-title">База данных временно недоступна</p>
+                    <p class="empty-subtitle text-muted">
+                        Связь с контейнером PostgreSQL потеряна. Вероятно, он
+                        перезапускается или выключен. Пожалуйста, подождите пару
+                        минут и попробуйте снова.
+                    </p>
+                    <div class="empty-action">
+                        <a href="/admin/user/list" class="btn btn-primary">
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                class="icon"
+                                width="24"
+                                height="24"
+                                viewBox="0 0 24 24"
+                                stroke-width="2"
+                                stroke="currentColor"
+                                fill="none"
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                style="margin-right: 8px"
+                            >
+                                <path
+                                    stroke="none"
+                                    d="M0 0h24v24H0z"
+                                    fill="none"
+                                />
+                                <path
+                                    d="M20 11a8.1 8.1 0 0 0 -15.5 -2m-.5 -4v4h4"
+                                />
+                                <path
+                                    d="M4 13a8.1 8.1 0 0 0 15.5 2m.5 4v-4h-4"
+                                />
+                            </svg>
+                            Обновить страницу
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </body>
+</html>

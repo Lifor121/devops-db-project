@@ -1,0 +1,8 @@
+/* Скрываем всё, что связано с удалением для роли Manager */
+a[href*="/delete"],
+a:has(i.fa-trash),
+a[data-bs-target*="delete"],
+a[data-name="delete"],
+button[data-bs-target*="delete"] {
+    display: none !important;
+}
