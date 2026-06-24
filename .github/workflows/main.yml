@@ -26,6 +26,10 @@ jobs:
           --health-timeout 5s
           --health-retries 5
 
+    env:
+      # Для CI/CD используем сгенерированную заглушку
+      ENCRYPTION_KEY: "V1hZN2o3eDh1OUFaT1QydGVkS1Z3a0hJcWZ0S3o5a0E="
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
