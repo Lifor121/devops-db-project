@@ -1,3 +1,4 @@
+import traceback
 from pathlib import Path
 
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
@@ -23,7 +24,9 @@ DB_OFFLINE_HTML = Path("templates/503.html").read_text(encoding="utf-8")
 async def global_ui_injector_middleware(request: Request, call_next):
     try:
         response = await call_next(request)
-    except Exception:
+    except Exception as e:
+        print(f"КРИТИЧЕСКАЯ ОШИБКА: {e}")
+        traceback.print_exc()
         return HTMLResponse(content=DB_OFFLINE_HTML, status_code=503)
 
     # Перехватываем GET-запрос к корню админки
@@ -86,6 +89,10 @@ admin.add_view(AuditLogAdmin)
 
 @app.on_event("startup")
 async def startup():
+    # Подстраховка для Alembic
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+
     # Делаем бэкап при старте
     await create_backup()
 
