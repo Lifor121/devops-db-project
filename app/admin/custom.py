@@ -178,6 +178,16 @@ class RestoreView(BaseView):
                             # Сохраняем только новых пользователей
                             await session.commit()
 
+                            if added_count > 0:
+                                log = AuditLog(
+                                    actor_role=request.session.get("role", "admin"),
+                                    action_type="RESTORE",
+                                    entity_name="Backup",
+                                    details=f"Успешное восстановление БД из копии. Добавлено записей: {added_count}. Пропущено: {skipped_count}.",
+                                )
+                                session.add(log)
+                                await session.commit()
+
                         message = f"Успех! Слияние завершено. Восстановлено записей: {added_count}. Пропущено дубликатов: {skipped_count}."
                     except Exception as e:
                         message = f"Произошла ошибка при чтении бэкапа: {str(e)}"

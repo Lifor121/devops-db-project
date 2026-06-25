@@ -52,6 +52,35 @@ class UserAdmin(ModelView, model=User):
     def is_accessible(self, request: Request) -> bool:
         return request.session.get("role") in ["admin", "manager"]
 
+    # Создание новой или редактировании существующей записи
+    async def on_model_change(
+        self, data: dict, model: Any, is_created: bool, request: Request
+    ) -> None:
+        role = request.session.get("role", "unknown")
+
+        # Определяем тип действия: создание или обновление
+        action = "CREATE" if is_created else "UPDATE"
+
+        # Получаем данные из формы или модели (в зависимости от того, что доступно)
+        username = data.get("username", getattr(model, "username", "Неизвестно"))
+        email = data.get("email", getattr(model, "email", "Неизвестно"))
+
+        if is_created:
+            details = f"Ручное добавление пользователя: {username} ({email})"
+        else:
+            details = f"Ручное изменение пользователя: {username} ({email})"
+
+        # Записываем в журнал аудита
+        async with AsyncSessionLocal() as session:
+            log = AuditLog(
+                actor_role=role,
+                action_type=action,
+                entity_name="User",
+                details=details,
+            )
+            session.add(log)
+            await session.commit()
+
     async def on_model_delete(self, model: Any, request: Request) -> None:
         role = request.session.get("role", "unknown")
         if role != "admin":
